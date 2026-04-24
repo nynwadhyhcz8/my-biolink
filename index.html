@@ -293,7 +293,7 @@
                 <div style="font-size: max(1.2vh, 11px); color: var(--bamboo-green); margin-bottom: 8px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase;">
                     <i class="fas fa-music"></i> Ticking Away
                 </div>
-                <audio controls preload="auto" style="width: 90%;">
+                <audio id="bg-audio" controls loop preload="auto" style="width: 90%;">
                     <source src="ticking-away.mp3" type="audio/mpeg">
                     Your browser does not support the audio element.
                 </audio>
@@ -359,5 +359,29 @@
         </div>
     </div>
 
+    <!-- Script to trigger audio on first tap (mobile workaround) -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var audio = document.getElementById('bg-audio');
+            
+            // Try to play immediately (might work on desktop)
+            var playPromise = audio.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(function(error) {
+                    // Autoplay was prevented.
+                    // Listen for the first touch or click to start the music.
+                    var playOnInteraction = function() {
+                        audio.play();
+                        // Remove the listeners once played so it doesn't trigger on every click
+                        document.removeEventListener('click', playOnInteraction);
+                        document.removeEventListener('touchstart', playOnInteraction);
+                    };
+                    
+                    document.addEventListener('click', playOnInteraction);
+                    document.addEventListener('touchstart', playOnInteraction);
+                });
+            }
+        });
+    </script>
 </body>
 </html>
