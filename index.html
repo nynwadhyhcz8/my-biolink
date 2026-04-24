@@ -367,24 +367,33 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             var audio = document.getElementById('bg-audio');
-            
-            // Try to play immediately (might work on desktop)
-            var playPromise = audio.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(function(error) {
-                    // Autoplay was prevented.
-                    // Listen for the first touch or click to start the music.
-                    var playOnInteraction = function() {
-                        audio.play();
-                        // Remove the listeners once played so it doesn't trigger on every click
-                        document.removeEventListener('click', playOnInteraction);
-                        document.removeEventListener('touchstart', playOnInteraction);
-                    };
-                    
-                    document.addEventListener('click', playOnInteraction);
-                    document.addEventListener('touchstart', playOnInteraction);
-                });
+            var isPlaying = false;
+
+            function tryPlay() {
+                if (!isPlaying) {
+                    var playPromise = audio.play();
+                    if (playPromise !== undefined) {
+                        playPromise.then(function() {
+                            isPlaying = true;
+                            // Remove listeners once successfully played
+                            document.removeEventListener('click', tryPlay);
+                            document.removeEventListener('touchstart', tryPlay);
+                            document.removeEventListener('touchend', tryPlay);
+                        }).catch(function(error) {
+                            // Autoplay blocked, will try again on next interaction
+                        });
+                    }
+                }
             }
+
+            // 1. Attempt to play immediately on page load (works on some desktop browsers)
+            tryPlay();
+
+            // 2. Add interaction listeners immediately as a fallback for smartphones
+            // iOS specifically often requires 'touchend' or 'click' instead of just 'touchstart'
+            document.addEventListener('click', tryPlay);
+            document.addEventListener('touchstart', tryPlay);
+            document.addEventListener('touchend', tryPlay);
         });
     </script>
 </body>
